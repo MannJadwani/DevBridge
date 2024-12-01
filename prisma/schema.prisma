@@ -1,0 +1,51 @@
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Project {
+  id                String        @id @default(auto()) @map("_id") @db.ObjectId
+  name              String
+  description       String
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  userId            String
+  status            String        @default("draft")
+  requirements      Requirement[]
+  questions         Question[]
+  questionsGenerated Boolean      @default(false)
+}
+
+model Requirement {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String
+  type        String   // functional, non-functional, technical
+  priority    String   // high, medium, low
+  status      String   @default("pending")
+  projectId   String   @db.ObjectId
+  project     Project  @relation(fields: [projectId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Question {
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  text        String
+  answer      String?
+  projectId   String     @db.ObjectId
+  project     Project    @relation(fields: [projectId], references: [id])
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  category    String?    // e.g., "functional", "technical", "user-experience"
+  priority    String?    // high, medium, low
+  status      String     @default("pending") // pending, answered, reviewed
+  depth       Int        @default(0)         // New: tracks the question's depth level
+  parentId    String?    @db.ObjectId        // New: references parent question
+  parent      Question?  @relation("QuestionFollowUps", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  followUps   Question[] @relation("QuestionFollowUps")
+}
